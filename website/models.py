@@ -11,8 +11,10 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, nullable=False)
     username = Column(String(50), unique=True, index=True, nullable=False)
-    email = Column(String(50), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(50), nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    first_name = Column(String, nullable=False, index=True)
+    last_name = Column(String, nullable=False, index=True)
+    hashed_password = Column(String, nullable=False)
     role = Column(String(50), nullable=False)
     is_blocked = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
