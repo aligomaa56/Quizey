@@ -96,3 +96,4 @@ class QuestionBank(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     questions = relationship('Question', backref='question_banks', lazy='dynamic', cascade='all, delete-orphan')
+    
