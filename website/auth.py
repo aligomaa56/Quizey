@@ -43,7 +43,7 @@ def register():
             return jsonify({'message': 'Password must be at least 8 characters long'}), 400
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
             return jsonify({'message': 'Invalid email format'}), 400
-        if role not in ['admin', 'user']:
+        if role not in ['student', 'teacher']:
             return jsonify({'message': 'Invalid role'}), 400
         if db.query(User).filter(User.username == username).first():
             return jsonify({'message': 'Username already exists'}), 400
@@ -82,7 +82,7 @@ def update_user_profile(user_id):
     if not token:
         return jsonify({"detail": "Token is missing"}), 401
     
-    token = token.replace("Bearer ", "")  # Remove the "Bearer " prefix if it's present
+    token = token.replace("Bearer ", "")
     user = get_current_user(token)
 
     if user is None:
