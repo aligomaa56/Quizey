@@ -1,8 +1,8 @@
-"""EDT: update the tables
+"""EDT: Upgrade question
 
-Revision ID: 3b4fab13e81b
-Revises: 9546ce91144e
-Create Date: 2024-09-04 01:34:33.119200
+Revision ID: fcaf791c9dfa
+Revises: 75f9423726c4
+Create Date: 2024-09-07 01:41:04.729909
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '3b4fab13e81b'
-down_revision: Union[str, None] = '9546ce91144e'
+revision: str = 'fcaf791c9dfa'
+down_revision: Union[str, None] = '75f9423726c4'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
