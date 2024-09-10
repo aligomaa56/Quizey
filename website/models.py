@@ -1,6 +1,6 @@
 from sqlalchemy import (
     Column, Integer, String, Text, Float,
-    DateTime, ForeignKey, Boolean, func
+    DateTime, ForeignKey, Boolean, func, Enum
 )
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -37,6 +37,7 @@ class Quiz(Base):
     max_attempts = Column(Integer, default=1)
     max_participants = Column(Integer)
     is_published = Column(Boolean, default=False)
+    quiz_type = Column(Enum('mcq', 'mixed', 'written', name='quiz_type'), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -50,13 +51,14 @@ class Question(Base):
     quiz_id = Column(Integer, ForeignKey('quizzes.id'))
     quiz_banks_id = Column(Integer, ForeignKey('question_banks.id'))
     content = Column(Text, nullable=False)
-    type = Column(String(50), nullable=False)
+    question_type = Column(Enum('true_false', 'choose', 'written', name='question_type'), nullable=False)
     points = Column(Integer, nullable=False, default=1)
     order = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
     answers = relationship('Answer', backref='questions', lazy='dynamic', cascade='all, delete-orphan')
+    correct_answers = relationship('CorrectAnswer', backref='questions', lazy='dynamic', cascade='all, delete-orphan')
 
 class QuestionBank(Base):
     __tablename__ = 'question_banks'
@@ -75,7 +77,7 @@ class QuizAttempt(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     quiz_id = Column(Integer, ForeignKey('quizzes.id'), nullable=False)
     started_at = Column(DateTime(timezone=True), nullable=False)
-    ended_at = Column(DateTime(timezone=True), nullable=False)
+    ended_at = Column(DateTime(timezone=True), nullable=True)
     score = Column(Float)
     is_submitted = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -87,9 +89,19 @@ class Answer(Base):
     __tablename__ = 'answers'
     id = Column(Integer, primary_key=True, nullable=False)
     question_id = Column(Integer, ForeignKey('questions.id'), nullable=False)
-    quiz_attemp_id = Column(Integer, ForeignKey('quiz_attempts.id'), nullable=False)
+    attemp_id = Column(Integer, ForeignKey('quiz_attempts.id'), nullable=False)
     content = Column(Text)
-    is_correct = Column(Boolean)
-    points_awarded = Column(Float)
+    points_awarded = Column(Float, default=0.0)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    question = relationship('Question', backref='answers')
+    quiz_attempt = relationship('QuizAttempt', backref='answers')
+
+class CorrectAnswer(Base):
+    __tablename__ = 'correct_answers'
+    id = Column(Integer, primary_key=True, nullable=False)
+    question_id = Column(Integer, ForeignKey('questions.id'), nullable=False)
+    correct_answer = Column(Text)
+    
+    question = relationship('Question', backref='correct_answers')
