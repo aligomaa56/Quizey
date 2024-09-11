@@ -6,6 +6,7 @@ from sqlalchemy.exc import DataError, IntegrityError
 from datetime import datetime, timedelta
 from utils import evaluate_quiz
 from sqlalchemy import func
+import pytz
 
 views = Blueprint('views', __name__)
 
@@ -81,24 +82,33 @@ def get_all_quizzes(user_id):
     )
     
     if not quizzes:
-        return jsonify({"detail": "Quiz not found"}), 404
+        return jsonify({"detail": "No quizzes found"}), 404
 
     response_data = []
     for quiz in quizzes:
-        response_data.append({
-            "id": quiz.id, "title": quiz.title,
-            "description": quiz.description, "start_time": quiz.start_time,
-            "end_time": quiz.end_time, "duration": quiz.duration,
+        quiz_data = {
+            "id": quiz.id, "title": quiz.title, "description": quiz.description,
+            "start_time": quiz.start_time, "end_time": quiz.end_time, "duration": quiz.duration,
             "max_attempts": quiz.max_attempts, "max_participants": quiz.max_participants,
             "is_published": quiz.is_published, "created_at": quiz.created_at,
-            "updated_at": quiz.updated_at, "quiz_type": quiz.quiz_type, "questions": [
-                {"id":q.id,"content":q.content, "type":q.type, "points":q.points, "order":q.order}
-                for q in quiz.questions
-                ],
+            "updated_at": quiz.updated_at, "quiz_type": quiz.quiz_type, "questions": [],
             "attempts": [a.id for a in quiz.attempts]
-        })
+        }
 
-    return jsonify(response_data), 200 
+        for q in quiz.questions:
+            question_data = {
+                "id": q.id, "content": q.content, "question_type": q.question_type, "points": q.points, "order": q.order
+            }
+            if q.question_type in ['true_false', 'choose']:
+                correct_answer = db.query(CorrectAnswer).filter(CorrectAnswer.question_id == q.id).first()
+                if correct_answer:
+                    question_data["correct_answer"] = correct_answer.correct_answer
+            
+            quiz_data["questions"].append(question_data)
+        
+        response_data.append(quiz_data)
+
+    return jsonify(response_data), 200
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>', methods=['GET'], strict_slashes=False)
 def get_one_quiz(user_id, quiz_id):
@@ -118,22 +128,31 @@ def get_one_quiz(user_id, quiz_id):
         return jsonify({"detail": "Unauthorized access"}), 403
 
     quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
-    question = db.query(Question).filter(Question.quiz_id == quiz_id).all()
-    attempts = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).all()
     if not quiz:
         return jsonify({"detail": "Quiz not found"}), 404
 
-    return jsonify({
+    questions = db.query(Question).filter(Question.quiz_id == quiz_id).all()
+    attempts = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).all()
+
+    response_data = {
         "id": quiz.id, "title": quiz.title, "description": quiz.description,
         "start_time": quiz.start_time, "end_time": quiz.end_time, "duration": quiz.duration,
         "max_attempts": quiz.max_attempts, "max_participants": quiz.max_participants,
         "is_published": quiz.is_published, "created_at": quiz.created_at,
         "updated_at": quiz.updated_at, "quiz_type": quiz.quiz_type, "questions": [
-                {"id":q.id,"content":q.content, "type":q.type, "points":q.points, "order":q.order}
-                for q in quiz.questions
-                ],
+            {"id": q.id, "content": q.content, "question_type": q.question_type, "points": q.points, "order": q.order}
+            for q in questions
+        ],
         "attempts": [a.id for a in attempts]
-    }), 200
+    }
+
+    for q in response_data["questions"]:
+        if q["question_type"] in ['true_false', 'choose']:
+            correct_answer = db.query(CorrectAnswer).filter(CorrectAnswer.question_id == q["id"]).first()
+            if correct_answer:
+                q["correct_answer"] = correct_answer.correct_answer
+
+    return jsonify(response_data), 200
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/update', methods=['PUT'], strict_slashes=False)
 def update_quiz(user_id, quiz_id):
@@ -157,6 +176,21 @@ def update_quiz(user_id, quiz_id):
         return jsonify({"detail": "Quiz not found"}), 404
 
     data = request.json
+    quiz_type=data['quiz_type']
+    if quiz_type not in ['mcq', 'mixed', 'written']:
+        return jsonify({"detail": "Invalid quiz type"}), 400
+    
+    questions = db.query(Question).filter(Question.quiz_id == quiz_id).all()
+
+    if questions:
+        for question in questions:
+            if question.question_type == 'true_false' or question.question_type == 'choose':
+                if quiz_type == 'written':
+                    return jsonify({"detail": "Invalid quiz type for this quiz"}), 400
+            elif question.question_type == 'written':
+                if quiz_type == 'mcq':
+                    return jsonify({"detail": "Invalid quiz type for this quiz"}), 400
+
     try:
         start_time = datetime.strptime(data['start_time'], '%Y-%m-%d %H:%M:%S')
         end_time = datetime.strptime(data['end_time'], '%Y-%m-%d %H:%M:%S')
@@ -233,23 +267,28 @@ def create_question(user_id, quiz_id):
 
     if quiz.quiz_type == 'mcq' and data['question_type'] == 'written':
         return jsonify({"detail": "Invalid question type for this quiz"}), 400
-    elif quiz.quiz_type == 'written' and data['question_type'] == 'true_false' or data['question_type'] == 'choose':
+    elif quiz.quiz_type == 'written' and (data['question_type'] == 'true_false' or data['question_type'] == 'choose'):
         return jsonify({"detail": "Invalid question type for this quiz"}), 400
 
-    new_question = Question(
-        quiz_id=quiz_id, content=data['content'],
-        type=data['type'], points=data['points'],
-        order=data['order'], question_type=data['question_type']
-    )
-
-    db.add(new_question)
-    db.commit()  
-
-    if new_question.question_type == 'true_false' or new_question.question_type == 'choose':
+    if data.get('question_type') == 'true_false' or data.get('question_type') == 'choose':
         correct_answer_data = data.get('correct_answer')
         if not correct_answer_data:
             return jsonify({"detail": "Correct answer is required"}), 400
 
+    for question in quiz.questions:
+        if question.order == data['order']:
+            return jsonify({"detail": "Invalid question order"}), 400
+
+    new_question = Question(
+        quiz_id=quiz_id, content=data['content'],
+        question_type=data['question_type'], points=data['points'],
+        order=data['order']
+    )
+
+    db.add(new_question)
+    db.commit()
+
+    if new_question.question_type == 'true_false' or new_question.question_type == 'choose':
         correct_answer = CorrectAnswer(
             question_id=new_question.id,
             correct_answer=correct_answer_data
@@ -283,7 +322,6 @@ def get_one_question(user_id, quiz_id, question_id):
     response_data = {
         "id": question.id,
         "content": question.content,
-        "type": question.type,
         "points": question.points,
         "order": question.order,
         "created_at": question.created_at,
@@ -324,7 +362,6 @@ def get_all_questions(user_id, quiz_id):
         question_data = {
             "id": question.id,
             "content": question.content,
-            "type": question.type,
             "points": question.points,
             "order": question.order,
             "created_at": question.created_at,
@@ -378,13 +415,33 @@ def update_question(user_id, quiz_id, question_id):
 
     try:
         question.content = data['content']
-        question.type = data['type']
         question.points = data['points']
+
+        if data['order'] != question.order:
+            for q in quiz.questions:
+                if q.order == data['order']:
+                    return jsonify({"detail": "Invalid question order"}), 400
+            question.order = data['order']
+
         question.order = data['order']
         question.question_type = data['question_type']
+
+        if question.question_type == 'true_false' or question.question_type == 'choose':
+            correct_answer_data = data.get('correct_answer')
+            if not correct_answer_data:
+                return jsonify({"detail": "Correct answer is required"}), 400
+
+            correct_answer = db.query(CorrectAnswer).filter(CorrectAnswer.question_id == question_id).first()
+            if correct_answer:
+                correct_answer.correct_answer = correct_answer_data
+            else:
+                new_correct_answer = CorrectAnswer(
+                    question_id=question_id,
+                    correct_answer=correct_answer_data
+                )
+                db.add(new_correct_answer)
         db.commit()
         return jsonify({"message": "Question updated successfully"}), 200
-    
     except DataError:
         db.rollback()
         return jsonify({"detail": "Database error occurred"}), 500
@@ -466,6 +523,7 @@ def update_bank(user_id, question_bank_id):
     try:
         bank.title = data['title']
         bank.description = data['description']
+
         db.commit()
         return jsonify({"message": "Question bank updated successfully"}), 200
     
@@ -558,7 +616,7 @@ def get_one_bank(user_id, question_bank_id):
         "updated_at": question_back.updated_at
     }), 200
 
-@views.route('/users/<int:user_id>/question_banck/<int:question_bank_id>/questions', methods=['POST'], strict_slashes=False)
+@views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/questions', methods=['POST'], strict_slashes=False)
 def add_question_to_bank(user_id, question_bank_id):
     db = get_db()
     token = request.headers.get('Authorization')
@@ -586,7 +644,7 @@ def add_question_to_bank(user_id, question_bank_id):
 
     new_question = Question(
         quiz_banks_id=question_bank_id, content=data['content'],
-        type=data['type'], points=data['points'], question_type=data['question_type']
+        points=data['points'], question_type=data['question_type']
     )
     db.add(new_question)
     db.commit()
@@ -594,6 +652,8 @@ def add_question_to_bank(user_id, question_bank_id):
     if new_question.question_type == 'true_false' or new_question.question_type == 'choose':
         correct_answer_data = data.get('correct_answer')
         if not correct_answer_data:
+            db.delete(new_question)
+            db.commit()
             return jsonify({"detail": "Correct answer is required"}), 400
 
         correct_answer = CorrectAnswer(
@@ -628,7 +688,7 @@ def get_one_question_in_bank(user_id, question_bank_id, question_id):
 
     response_data = {
         "id": question.id, "content": question.content,
-        "type": question.type, "points": question.points,
+        "question_type": question.question_type, "points": question.points,
         "created_at": question.created_at,
     }
 
@@ -665,7 +725,6 @@ def get_all_questions_in_bank(user_id, question_bank_id):
         question_data = {
             "id": question.id,
             "content": question.content,
-            "type": question.type,
             "points": question.points,
             "created_at": question.created_at,
             "updated_at": question.updated_at,
@@ -734,7 +793,6 @@ def update_question_in_bank(user_id, question_bank_id, question_id):
 
     try:
         question.content = data['content']
-        question.type = data['type']
         question.points = data['points']
         question.question_type = data['question_type']
         db.commit()
@@ -765,7 +823,8 @@ def create_quiz_attempt(user_id, quiz_id):
     if not quiz:
         return jsonify({"detail": "Quiz not found"}), 404
 
-    current_time = func.now()
+    tz = pytz.UTC
+    current_time = datetime.now(tz)
     if quiz.start_time > current_time or quiz.end_time < current_time:
         return jsonify({"detail": "Quiz is not active"}), 400
 
@@ -848,37 +907,6 @@ def get_one_quiz_attempt(user_id, quiz_id, attempt_id):
         "score": attempt.score, "is_submitted": attempt.is_submitted
     }), 200
 
-@views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts', methods=['GET'], strict_slashes=False)
-def get_all_student_quiz_attempts(user_id, quiz_id):
-    db = get_db()
-    token = request.headers.get('Authorization')
-    if not token:
-        return jsonify({"detail": "Token is missing"}), 401
-
-    token = token.replace("Bearer ", "")
-    user = get_current_user(token)
-
-    if user is None:
-        return jsonify({"detail": "Invalid or expired token"}), 401
-    if user.id != user_id:
-        return jsonify({"detail": "Unauthorized access"}), 403
-    if user.role != 'student':
-        return jsonify({"detail": "Unauthorized access"}), 403
-
-    attempts = db.query(QuizAttempt).filter(QuizAttempt.user_id == user_id, QuizAttempt.quiz_id == quiz_id).all()
-    if not attempts:
-        return jsonify({"detail": "Attempt not found"}), 404
-
-    response_data = []
-    for attempt in attempts:
-        response_data.append({
-            "id": attempt.id, "user_id": attempt.user_id, "quiz_id": attempt.quiz_id,
-            "started_at": attempt.started_at, "ended_at": attempt.ended_at,
-            "score": attempt.score, "is_submitted": attempt.is_submitted
-        })
-
-    return jsonify(response_data), 200
-
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer', methods=['POST'], strict_slashes=False)
 def submit_answer(user_id, quiz_id, attempt_id, question_id):
     db = get_db()
@@ -899,6 +927,9 @@ def submit_answer(user_id, quiz_id, attempt_id, question_id):
     attempt = db.query(QuizAttempt).filter_by(id=attempt_id, user_id=user_id, quiz_id=quiz_id, is_submitted=False).first()
     if not attempt:
         return jsonify({"detail": "Attempt not found"}), 404
+    
+    if attempt.is_submitted:
+        return jsonify({"detail": "Attempt has already been submitted and cannot be updated"}), 400
 
     question = db.query(Question).filter(Question.id == question_id, Question.quiz_id == quiz_id).first()
     if not question:
@@ -949,6 +980,9 @@ def get_one_answer(user_id, quiz_id, attempt_id, question_id):
     if not attempt:
         return jsonify({"detail": "Attempt not found"}), 404
 
+    if attempt.is_submitted:
+        return jsonify({"detail": "Attempt has already been submitted"}), 400
+
     question = db.query(Question).filter(Question.id == question_id, Question.quiz_id == quiz_id).first()
     if not question:
         return jsonify({"detail": "Question not found"}), 404
@@ -962,6 +996,42 @@ def get_one_answer(user_id, quiz_id, attempt_id, question_id):
         "attempt_id": answer.attempt_id, "content": answer.content,
         "points_awarded": answer.points_awarded
     }), 200
+
+@views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/answer', methods=['GET'], strict_slashes=False)
+def get_all_attempt_answers(user_id, quiz_id, attempt_id):
+    db = get_db()
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"detail": "Token is missing"}), 401
+
+    token = token.replace("Bearer ", "")
+    user = get_current_user(token)
+
+    if user is None:
+        return jsonify({"detail": "Invalid or expired token"}), 401
+    if user.id != user_id:
+        return jsonify({"detail": "Unauthorized access"}), 403
+    if user.role == 'student':
+        attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.user_id == user_id, QuizAttempt.quiz_id == quiz_id).first()
+    if user.role == 'teacher':
+        attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.quiz_id == quiz_id).first()
+
+    if not attempt:
+        return jsonify({"detail": "Attempt not found"}), 404
+
+    answers = db.query(Answer).filter(Answer.attempt_id == attempt_id).all()
+    if not answers:
+        return jsonify({"detail": "Answer not found"}), 404
+
+    response_data = []
+    for answer in answers:
+        response_data.append({
+            "id": answer.id, "question_id": answer.question_id,
+            "attempt_id": answer.attempt_id, "content": answer.content,
+            "points_awarded": answer.points_awarded
+        })
+
+    return jsonify(response_data), 200
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer/update', methods=['PUT'], strict_slashes=False)
 def update_answer(user_id, quiz_id, attempt_id, question_id):
@@ -983,6 +1053,9 @@ def update_answer(user_id, quiz_id, attempt_id, question_id):
     attempt = db.query(QuizAttempt).filter_by(id=attempt_id, user_id=user_id, quiz_id=quiz_id, is_submitted=False).first()
     if not attempt:
         return jsonify({"detail": "Attempt not found"}), 404
+
+    if attempt.is_submitted:
+        return jsonify({"detail": "Attempt has already been submitted and cannot be updated"}), 400
 
     question = db.query(Question).filter(Question.id == question_id, Question.quiz_id == quiz_id).first()
     if not question:
@@ -1076,9 +1149,12 @@ def submit_quiz_attempt(user_id, quiz_id, attempt_id):
     if data.get('is_submitted') is None:
         return jsonify({"detail": "is_submitted is required"}), 400
     
-    if data['is_submitted'] is False:
+    if data['is_submitted'] is not True:
         return jsonify({"detail": "is_submitted must be true"}), 400
     
+    if attempt.is_submitted:
+        return jsonify({"detail": "Attempt has already been submitted"}), 400
+
     total_score = evaluate_quiz(attempt_id)
 
     try:
@@ -1089,7 +1165,7 @@ def submit_quiz_attempt(user_id, quiz_id, attempt_id):
         db.rollback()
         return jsonify({"detail": "Database error occurred"}), 500
 
-    return jsonify({"message": "Quiz attempt submitted successfully"}), 200
+    return jsonify({"message": "Quiz attempt submitted successfully", "Score": attempt.score}), 200
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/delete', methods=['DELETE'], strict_slashes=False)
 def delete_quiz_attempt(user_id, quiz_id, attempt_id):
@@ -1115,37 +1191,6 @@ def delete_quiz_attempt(user_id, quiz_id, attempt_id):
     db.delete(attempt)
     db.commit()
     return jsonify({"message": "Attempt deleted successfully"}), 200
-
-@views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts', methods=['GET'], strict_slashes=False)
-def get_all_quiz_attempts(user_id, quiz_id):
-    db = get_db()
-    token = request.headers.get('Authorization')
-    if not token:
-        return jsonify({"detail": "Token is missing"}), 401
-
-    token = token.replace("Bearer ", "")
-    user = get_current_user(token)
-
-    if user is None:
-        return jsonify({"detail": "Invalid or expired token"}), 401
-    if user.id != user_id:
-        return jsonify({"detail": "Unauthorized access"}), 403
-    if user.role != 'teacher':
-        return jsonify({"detail": "Unauthorized access"}), 403
-
-    attempts = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).all()
-    if not attempts:
-        return jsonify({"detail": "Attempt not found"}), 404
-
-    response_data = []
-    for attempt in attempts:
-        response_data.append({
-            "id": attempt.id, "user_id": attempt.user_id, "quiz_id": attempt.quiz_id,
-            "started_at": attempt.started_at, "ended_at": attempt.ended_at,
-            "score": attempt.score, "is_submitted": attempt.is_submitted
-        })
-
-    return jsonify(response_data), 200
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions', methods=['GET'], strict_slashes=False)
 def get_all_questions_in_attempt(user_id, quiz_id, attempt_id):
@@ -1181,8 +1226,8 @@ def get_all_questions_in_attempt(user_id, quiz_id, attempt_id):
 
     return jsonify(response_data), 200
 
-@views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer', methods=['GET'], strict_slashes=False)
-def get_all_answers_in_attempt(user_id, quiz_id, attempt_id, question_id):
+@views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/', methods=['GET'], strict_slashes=False)
+def get_all_quiz_attempts(user_id, quiz_id):
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -1195,25 +1240,49 @@ def get_all_answers_in_attempt(user_id, quiz_id, attempt_id, question_id):
         return jsonify({"detail": "Invalid or expired token"}), 401
     if user.id != user_id:
         return jsonify({"detail": "Unauthorized access"}), 403
+    if user.role == 'teacher':
+        attempts = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).all()
+    if user.role == 'student':
+        attempts = db.query(QuizAttempt).filter(QuizAttempt.user_id == user_id, QuizAttempt.quiz_id == quiz_id).all()
 
-    attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.user_id == user_id, QuizAttempt.quiz_id == quiz_id).first()
-    if not attempt:
+    if not attempts:
         return jsonify({"detail": "Attempt not found"}), 404
 
-    question = db.query(Question).filter(Question.id == question_id, Question.quiz_id == quiz_id).first()
-    if not question:
-        return jsonify({"detail": "Question not found"}), 404
-
-    answers = db.query(Answer).filter(Answer.attempt_id == attempt_id, Answer.question_id == question_id).all()
-    if not answers:
-        return jsonify({"detail": "Answer not found"}), 404
-
     response_data = []
-    for answer in answers:
+    for attempt in attempts:
         response_data.append({
-            "id": answer.id, "question_id": answer.question_id,
-            "attempt_id": answer.attempt_id, "content": answer.content,
-            "points_awarded": answer.points_awarded
+            "id": attempt.id, "user_id": attempt.user_id, "quiz_id": attempt.quiz_id,
+            "started_at": attempt.started_at, "ended_at": attempt.ended_at,
+            "score": attempt.score, "is_submitted": attempt.is_submitted
         })
 
     return jsonify(response_data), 200
+
+@views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/evaluate', methods=['GET'], strict_slashes=False)
+def evaluate_quiz_attempt(user_id, quiz_id, attempt_id):
+    db = get_db()
+
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({"detail": "Token is missing"}), 401
+    
+    token = token.replace("Bearer ", "")
+    user = get_current_user(token)
+
+    if user is None:
+        return jsonify({"detail": "Invalid or expired token"}), 401
+
+    if user.id != user_id:
+        return jsonify({"detail": "Unauthorized access"}), 403
+
+    if user.role != 'teacher':
+        attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.user_id == user_id, QuizAttempt.quiz_id == quiz_id).first()
+    if user.role != 'student':
+        attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.quiz_id == quiz_id).first()
+
+    if not attempt:
+        return jsonify({"detail": "Attempt not found"}), 404
+
+    total_score = evaluate_quiz(attempt_id)
+    return jsonify({"total_score": total_score}), 200
+
