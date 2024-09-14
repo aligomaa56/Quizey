@@ -1,0 +1,6 @@
+# Ignore token and credential files
+./website/token.json
+./website/credentials.json
+
+# Ignore environment files
+.env
