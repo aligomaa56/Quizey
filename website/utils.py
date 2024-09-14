@@ -1,5 +1,6 @@
 from models import Question, QuizAttempt, CorrectAnswer, Question
 from database import get_db
+import random
 
 
 def evaluate_quiz(quiz_attempt_id):
@@ -27,3 +28,7 @@ def evaluate_quiz(quiz_attempt_id):
             raise ValueError('Invalid question type')
 
     return total_score
+
+def generate_verification_code():
+    """Generate a 6-digit random verification code."""
+    return str(random.randint(100000, 999999))
