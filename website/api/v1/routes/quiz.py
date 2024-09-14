@@ -106,7 +106,9 @@ def get_all_quizzes(user_id):
     return jsonify(response_data), 200
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>', methods=['GET'], strict_slashes=False)
-def get_one_quiz(user_id, quiz_id):
+def get_one_quiz(user_id, quiz_id, num_page=1, page_size=1):
+    start = (num_page - 1) * page_size
+    end = start + page_size
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -119,15 +121,17 @@ def get_one_quiz(user_id, quiz_id):
         return jsonify({"detail": "Invalid or expired token"}), 401
     if user.id != user_id:
         return jsonify({"detail": "Unauthorized access"}), 403
-    if user.role != 'teacher':
-        return jsonify({"detail": "Unauthorized access"}), 403
-
-    quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
-    if not quiz:
-        return jsonify({"detail": "Quiz not found"}), 404
-
-    questions = db.query(Question).filter(Question.quiz_id == quiz_id).all()
-    attempts = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).all()
+    if user.role == 'teacher':
+        quiz = db.query(Quiz).filter(Quiz.id == quiz_id).first()
+        if not quiz:
+            return jsonify({"detail": "Quiz not found"}), 404
+        questions = db.query(Question).filter(Question.quiz_id == quiz_id).all()
+        attempts = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).all()
+    else:
+        quiz = db.query(Quiz).filter(Quiz.id == quiz_id, Quiz.is_published == True).first()
+        if not quiz:
+            return jsonify({"detail": "Quiz not found"}), 404
+        questions = db.query(Question).filter(Question.quiz_id == quiz_id).slice(start, end).all()
 
     response_data = {
         "id": quiz.id, "title": quiz.title, "description": quiz.description,
@@ -138,14 +142,15 @@ def get_one_quiz(user_id, quiz_id):
             {"id": q.id, "content": q.content, "question_type": q.question_type, "points": q.points, "order": q.order}
             for q in questions
         ],
-        "attempts": [a.id for a in attempts]
+        "attempts": [a.id for a in attempts] if user.role == 'teacher' else None
     }
 
-    for q in response_data["questions"]:
-        if q["question_type"] in ['true_false', 'choose']:
-            correct_answer = db.query(CorrectAnswer).filter(CorrectAnswer.question_id == q["id"]).first()
-            if correct_answer:
-                q["correct_answer"] = correct_answer.correct_answer
+    if user.role == 'teacher':
+        for q in response_data["questions"]:
+            if q["question_type"] in ['true_false', 'choose']:
+                correct_answer = db.query(CorrectAnswer).filter(CorrectAnswer.question_id == q["id"]).first()
+                if correct_answer:
+                    q["correct_answer"] = correct_answer.correct_answer
 
     return jsonify(response_data), 200
 
