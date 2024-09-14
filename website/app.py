@@ -1,12 +1,12 @@
-from flask import Flask, request, session, jsonify
-from auth import auth
-from views import views
+from flask import Flask
+from api.v1.routes import auth, views
+
 
 def create_app():
     app = Flask(__name__)
         
-    app.register_blueprint(auth, url_prefix="/auth")
-    app.register_blueprint(views, url_prefix="/views")
+    app.register_blueprint(auth, url_prefix="/api/v1/auth")
+    app.register_blueprint(views, url_prefix="/api/v1/views")
 
     return app
 
