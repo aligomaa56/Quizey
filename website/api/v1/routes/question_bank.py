@@ -8,6 +8,13 @@ from . import views
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/questions', methods=['POST'], strict_slashes=False)
 def add_question_to_bank(user_id, question_bank_id):
+    """ Add a question to a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+    Returns:
+        JSON: A JSON response containing a message and the question ID.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -57,6 +64,14 @@ def add_question_to_bank(user_id, question_bank_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/questions/<int:question_id>', methods=['GET'], strict_slashes=False)
 def get_one_question_from_bank(user_id, question_bank_id, question_id):
+    """ Get a question from a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+        question_id (int): The ID of the question.
+    Returns:
+        JSON: A JSON response containing the question data.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -91,6 +106,13 @@ def get_one_question_from_bank(user_id, question_bank_id, question_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/questions/', methods=['GET'], strict_slashes=False)
 def get_all_questions_in_bank(user_id, question_bank_id):
+    """ Get all questions in a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+    Returns:
+        JSON: A JSON response containing the questions.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -132,6 +154,14 @@ def get_all_questions_in_bank(user_id, question_bank_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/questions/<int:question_id>/delete', methods=['DELETE'], strict_slashes=False)
 def delete_question_from_bank(user_id, question_bank_id, question_id):
+    """ Delete a question from a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+        question_id (int): The ID of the question.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -157,6 +187,14 @@ def delete_question_from_bank(user_id, question_bank_id, question_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/questions/<int:question_id>/update', methods=['PUT'], strict_slashes=False)
 def update_question_in_bank(user_id, question_bank_id, question_id):
+    """ Update a question in a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+        question_id (int): The ID of the question.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -191,4 +229,3 @@ def update_question_in_bank(user_id, question_bank_id, question_id):
     except DataError:
         db.rollback()
         return jsonify({"detail": "Database error occurred"}), 500
-
