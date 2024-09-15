@@ -8,6 +8,12 @@ from . import views
 
 @views.route('/users/<int:user_id>/quizzes', methods=['POST'], strict_slashes=False)
 def create_quiz(user_id):
+    """ Create a new quiz.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing a message and the quiz ID.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -53,6 +59,12 @@ def create_quiz(user_id):
 
 @views.route('/users/<int:user_id>/quizzes/', methods=['GET'], strict_slashes=False)
 def get_all_quizzes(user_id):
+    """ Get all quizzes.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing all quizzes.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -107,6 +119,15 @@ def get_all_quizzes(user_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>', methods=['GET'], strict_slashes=False)
 def get_one_quiz(user_id, quiz_id, num_page=1, page_size=1):
+    """ Get a single quiz.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        num_page (int): The page number.
+        page_size (int): The page size.
+    Returns:
+        JSON: A JSON response containing the quiz.
+    """
     start = (num_page - 1) * page_size
     end = start + page_size
     db = get_db()
@@ -156,6 +177,13 @@ def get_one_quiz(user_id, quiz_id, num_page=1, page_size=1):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/update', methods=['PUT'], strict_slashes=False)
 def update_quiz(user_id, quiz_id):
+    """ Update a quiz.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -216,6 +244,13 @@ def update_quiz(user_id, quiz_id):
     
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/delete', methods=['DELETE'], strict_slashes=False)
 def delete_quiz(user_id, quiz_id):
+    """ Delete a quiz.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
