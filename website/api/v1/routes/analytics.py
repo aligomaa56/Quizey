@@ -8,6 +8,14 @@ from . import views
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/evaluate', methods=['GET'], strict_slashes=False)
 def evaluate_quiz_attempt(user_id, quiz_id, attempt_id):
+    """ Evaluate a quiz attempt and return the total score.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        attempt_id (int): The ID of the quiz attempt.
+    Returns:
+        JSON: A JSON response containing the total score.
+    """
     db = get_db()
 
     token = request.headers.get('Authorization')

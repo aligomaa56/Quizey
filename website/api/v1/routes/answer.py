@@ -8,6 +8,17 @@ from . import views
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer', methods=['POST'], strict_slashes=False)
 def submit_answer(user_id, quiz_id, attempt_id, question_id):
+    """ Submit an answer to a question in a quiz attempt.
+
+    Args:
+        user_id (int): The ID of the user submitting the answer.
+        quiz_id (int): The ID of the quiz the question belongs to.
+        attempt_id (int): The ID of the quiz attempt.
+        question_id (int): The ID of the question being answered.
+
+    Returns:
+        JSON: A JSON response containing a message indicating the success or failure of the operation.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -60,6 +71,19 @@ def submit_answer(user_id, quiz_id, attempt_id, question_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer', methods=['GET'], strict_slashes=False)
 def get_one_answer(user_id, quiz_id, attempt_id, question_id):
+    """
+    Retrieve a specific answer for a given question in a quiz attempt.
+
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        attempt_id (int): The ID of the quiz attempt.
+        question_id (int): The ID of the question.
+
+    Returns:
+        Response: A JSON response containing the answer details if found, 
+                  or an error message with the appropriate HTTP status code.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -98,6 +122,17 @@ def get_one_answer(user_id, quiz_id, attempt_id, question_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/answer', methods=['GET'], strict_slashes=False)
 def get_all_attempt_answers(user_id, quiz_id, attempt_id):
+    """
+    Retrieve all answers for a given quiz attempt.
+
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        attempt_id (int): The ID of the quiz attempt.
+    
+    Returns:
+        Response: A JSON response containing the list of answers if found,
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -134,6 +169,17 @@ def get_all_attempt_answers(user_id, quiz_id, attempt_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer/update', methods=['PUT'], strict_slashes=False)
 def update_answer(user_id, quiz_id, attempt_id, question_id):
+    """ Update an answer to a question in a quiz attempt.
+
+    Args:
+        user_id (int): The ID of the user updating the answer.
+        quiz_id (int): The ID of the quiz the question belongs to.
+        attempt_id (int): The ID of the quiz attempt.
+        question_id (int): The ID of the question being answered.
+
+    Returns:
+        JSON: A JSON response containing a message indicating the success or failure of the operation.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -191,6 +237,17 @@ def update_answer(user_id, quiz_id, attempt_id, question_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/attempts/<int:attempt_id>/questions/<int:question_id>/answer/delete', methods=['DELETE'], strict_slashes=False)
 def delete_answer(user_id, quiz_id, attempt_id, question_id):
+    """ Delete an answer to a question in a quiz attempt.
+
+    Args:
+        user_id (int): The ID of the user deleting the answer.
+        quiz_id (int): The ID of the quiz the question belongs to.
+        attempt_id (int): The ID of the quiz attempt.
+        question_id (int): The ID of the question being answered.
+
+    Returns:
+        JSON: A JSON response containing a message indicating the success or failure of the operation.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
