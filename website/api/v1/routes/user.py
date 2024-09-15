@@ -8,6 +8,13 @@ from . import auth
 
 @auth.route('/users/<int:user_id>/profile', methods=['GET'])
 def get_user_profile(user_id: int):
+    """
+    Get user profile.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing the user profile data.
+    """
     token = request.headers.get('Authorization')
     if not token:
         return jsonify({"detail": "Token is missing"}), 401
@@ -26,6 +33,13 @@ def get_user_profile(user_id: int):
 
 @auth.route('/users/<int:user_id>/profile/update', methods=['PUT'])
 def update_user_profile(user_id):
+    """
+    Update user profile.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing a message and the updated user profile data.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -68,6 +82,13 @@ def update_user_profile(user_id):
 
 @auth.route('/users/<int:user_id>/profile/delete', methods=['DELETE'])
 def delete_user_profile(user_id):
+    """
+    Delete user profile.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
