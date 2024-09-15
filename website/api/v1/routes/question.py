@@ -8,6 +8,13 @@ from . import views
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/questions', methods=['POST'], strict_slashes=False)
 def create_question(user_id, quiz_id):
+    """ Create a new question.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+    Returns:
+        JSON: A JSON response containing a message and the question ID.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -67,6 +74,14 @@ def create_question(user_id, quiz_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/questions/<int:question_id>', methods=['GET'], strict_slashes=False)
 def get_one_question(user_id, quiz_id, question_id):
+    """ Get a question.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        question_id (int): The ID of the question.
+    Returns:
+        JSON: A JSON response containing the question details.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -105,6 +120,13 @@ def get_one_question(user_id, quiz_id, question_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/questions/', methods=['Get'], strict_slashes=False)
 def get_all_questions(user_id, quiz_id):
+    """ Get all questions in a quiz.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+    Returns:
+        JSON: A JSON response containing the questions.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -147,6 +169,14 @@ def get_all_questions(user_id, quiz_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/questions/<int:question_id>/update', methods=['PUT'], strict_slashes=False)
 def update_question(user_id, quiz_id, question_id):
+    """ Update a question.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        question_id (int): The ID of the question.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -215,6 +245,14 @@ def update_question(user_id, quiz_id, question_id):
 
 @views.route('/users/<int:user_id>/quizzes/<int:quiz_id>/questions/<int:question_id>/delete', methods=['DELETE'], strict_slashes=False)
 def delete_question(user_id, quiz_id, question_id):
+    """ Delete a question.
+    Args:
+        user_id (int): The ID of the user.
+        quiz_id (int): The ID of the quiz.
+        question_id (int): The ID of the question.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
