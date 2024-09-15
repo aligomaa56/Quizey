@@ -1,3 +1,4 @@
+""" This module provides a function to send an email using the Gmail API. """
 from __future__ import print_function
 import os
 import base64
@@ -13,7 +14,10 @@ from googleapiclient.discovery import build
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 def get_credentials():
-    """Get Gmail API credentials."""
+    """Get Gmail API credentials.
+    Returns:
+        google.oauth2.credentials.Credentials: The credentials object.
+    """
     creds = None
     # Get the current working directory
     cwd = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +42,12 @@ def get_credentials():
     return creds
 
 def send_email(to, subject, body):
-    """Send an email using the Gmail API."""
+    """Send an email using the Gmail API.
+    Args:
+        to (str): The recipient's email address.
+        subject (str): The email subject.
+        body (str): The email body.
+    """
     service = build('gmail', 'v1', credentials=get_credentials())
     
     message = MIMEMultipart()
