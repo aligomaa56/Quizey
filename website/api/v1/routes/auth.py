@@ -12,6 +12,10 @@ cache = {}
 
 @auth.route('/login', methods=['POST'])
 def login():
+    """ Log in a user and return an access token.
+    Returns:
+        JSON: A JSON response containing the access token.
+    """
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -32,6 +36,10 @@ def login():
 
 @auth.route('/register', methods=['POST'])
 def register():
+    """ Register a new user.
+    Returns:
+        JSON: A JSON response containing a message and the user ID.
+    """
     email = request.form.get('email')
     username = request.form.get('username')
     first_name = request.form.get('first_name')
@@ -79,6 +87,10 @@ def register():
 
 @auth.route('/verify_code', methods=['POST'])
 def verify_code():
+    """ Verify the verification code and register the user.
+    Returns:
+        JSON: A JSON response containing a message and the user ID.
+    """
     email = request.form.get('email')
     verification_code = request.form.get('verification_code')
     db = get_db()
@@ -104,6 +116,10 @@ def verify_code():
 
 @auth.route('/forgot_password', methods=['POST'])
 def forgot_password():
+    """ Send a password reset code to the user's email.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     email = request.form.get('email')
     db = get_db()
 
@@ -130,6 +146,10 @@ def forgot_password():
 
 @auth.route('/reset_password', methods=['POST'])
 def reset_password():
+    """ Reset the user's password.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     email = request.form.get('email')
     verification_code = request.form.get('verification_code')
     new_password = request.form.get('new_password')
