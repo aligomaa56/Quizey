@@ -1,9 +1,16 @@
+"""Utility functions for the website."""
 from models import Question, QuizAttempt, CorrectAnswer, Question
 from database import get_db
 import random
 
 
 def evaluate_quiz(quiz_attempt_id):
+    """Evaluate a quiz attempt and return the total score.
+    Args:
+        quiz_attempt_id (int): The ID of the quiz attempt.
+    Returns:
+        int: The total score.
+    """
     db = get_db()
     quiz_attempt = db.query(QuizAttempt).filter(QuizAttempt.id == quiz_attempt_id).first()
     
