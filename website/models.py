@@ -20,6 +20,7 @@ class User(Base):
     is_blocked = Column(Boolean, server_default=expression.false(), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    is_verified = Column(Boolean, server_default=expression.false(), nullable=False)
 
     quizzes = relationship('Quiz', back_populates='creator', lazy='dynamic')
     quiz_attempts = relationship('QuizAttempt', back_populates='user', lazy='dynamic')
