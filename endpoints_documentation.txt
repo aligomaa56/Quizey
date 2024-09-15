@@ -1,0 +1,59 @@
+# API Endpoints Overview
+
+## Authentication
+- Login: `POST /api/v1/auth/login`
+- Register: `POST /api/v1/auth/register`
+- Verify Code: `POST /api/v1/auth/verify_code`
+- Forgot Password: `POST /api/v1/auth/forgot_password`
+- Reset Password: `POST /api/v1/auth/reset_password`
+
+## User Profile
+- Get Profile: `GET /api/v1/auth/users/<user_id>/profile`
+- Update Profile: `PUT /api/v1/auth/users/<user_id>/profile/update`
+- Delete Profile: `DELETE /api/v1/auth/users/<user_id>/profile/delete`
+
+## Quizzes
+- Create Quiz: `POST /api/v1/views/users/<user_id>/quizzes`
+- Get All Quizzes: `GET /api/v1/views/users/<user_id>/quizzes/`
+- Get One Quiz: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>`
+- Update Quiz: `PUT /api/v1/views/users/<user_id>/quizzes/<quiz_id>/update`
+- Delete Quiz: `DELETE /api/v1/views/users/<user_id>/quizzes/<quiz_id>/delete`
+
+## Quiz Attempts
+- Create Attempt: `POST /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts`
+- Get All Attempts: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/`
+- Get One Attempt: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>`
+- Update Attempt: `PUT /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/update`
+- Delete Attempt: `DELETE /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/delete`
+- Submit Attempt: `POST /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/submit`
+- Evaluate Attempt: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/evaluate`
+
+## Questions
+- Create Question: `POST /api/v1/views/users/<user_id>/quizzes/<quiz_id>/questions`
+- Get All Questions: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/questions/`
+- Get One Question: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/questions/<question_id>`
+- Update Question: `PUT /api/v1/views/users/<user_id>/quizzes/<quiz_id>/questions/<question_id>/update`
+- Delete Question: `DELETE /api/v1/views/users/<user_id>/quizzes/<quiz_id>/questions/<question_id>/delete`
+- Get All Questions in Attempt: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/questions`
+
+## Answers
+- Submit Answer: `POST /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/questions/<question_id>/answer`
+- Get One Answer: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/questions/<question_id>/answer`
+- Get All Attempt Answers: `GET /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/answer`
+- Update Answer: `PUT /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/questions/<question_id>/answer/update`
+- Delete Answer: `DELETE /api/v1/views/users/<user_id>/quizzes/<quiz_id>/attempts/<attempt_id>/questions/<question_id>/answer/delete`
+
+## Question Banks
+- Create Bank: `POST /api/v1/views/users/<user_id>/question_bank`
+- Get All Banks: `GET /api/v1/views/users/<user_id>/question_bank`
+- Get One Bank: `GET /api/v1/views/users/<user_id>/question_bank/<question_bank_id>`
+- Update Bank: `PUT /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/update`
+- Delete Bank: `DELETE /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/delete`
+- Add Question to Bank: `POST /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/questions`
+- Get All Questions in Bank: `GET /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/questions/`
+- Get One Question from Bank: `GET /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/questions/<question_id>`
+- Update Question in Bank: `PUT /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/questions/<question_id>/update`
+- Delete Question from Bank: `DELETE /api/v1/views/users/<user_id>/question_bank/<question_bank_id>/questions/<question_id>/delete`
+
+## Static Files
+- Serve Static Files: `GET /static/<filename>`
