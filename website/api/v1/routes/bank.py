@@ -8,6 +8,12 @@ from . import views
 
 @views.route('/users/<int:user_id>/question_bank', methods=['POST'], strict_slashes=False)
 def create_bank(user_id):
+    """ Create a new question bank.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing a message and the question bank ID.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -35,6 +41,13 @@ def create_bank(user_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/update', methods=['PUT'], strict_slashes=False)
 def update_bank(user_id, question_bank_id):
+    """ Update a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -68,6 +81,13 @@ def update_bank(user_id, question_bank_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>/delete', methods=['DELETE'], strict_slashes=False)
 def delete_bank(user_id, question_bank_id):
+    """ Delete a question bank.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+    Returns:
+        JSON: A JSON response containing a message.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -93,6 +113,12 @@ def delete_bank(user_id, question_bank_id):
 
 @views.route('/users/<int:user_id>/question_bank', methods=['GET'], strict_slashes=False)
 def get_all_banks(user_id):
+    """ Get all question banks created by a user.
+    Args:
+        user_id (int): The ID of the user.
+    Returns:
+        JSON: A JSON response containing the question banks.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
@@ -125,6 +151,13 @@ def get_all_banks(user_id):
 
 @views.route('/users/<int:user_id>/question_bank/<int:question_bank_id>', methods=['GET'], strict_slashes=False)
 def get_one_bank(user_id, question_bank_id):
+    """ Get a single question bank created by a user.
+    Args:
+        user_id (int): The ID of the user.
+        question_bank_id (int): The ID of the question bank.
+    Returns:
+        JSON: A JSON response containing the question bank.
+    """
     db = get_db()
     token = request.headers.get('Authorization')
     if not token:
