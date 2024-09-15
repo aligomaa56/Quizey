@@ -1,3 +1,4 @@
+""" This module contains the database models for the website. """
 from sqlalchemy import (
     Column, Integer, String, Text, Float,
     DateTime, ForeignKey, Boolean, func, Enum
@@ -9,6 +10,7 @@ from sqlalchemy.sql import expression
 Base = declarative_base()
 
 class User(Base):
+    """ A class to represent a user. """
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
@@ -27,6 +29,7 @@ class User(Base):
     question_banks = relationship('QuestionBank', back_populates='creator', lazy='dynamic')
 
 class Quiz(Base):
+    """ A class to represent a quiz. """
     __tablename__ = 'quizzes'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String(50), nullable=False)
@@ -46,8 +49,8 @@ class Quiz(Base):
     questions = relationship('Question', back_populates='quiz',lazy='dynamic', cascade='all, delete-orphan')
     attempts = relationship('QuizAttempt', back_populates='quiz', lazy='dynamic', cascade='all, delete-orphan')
 
-
 class Question(Base):
+    """ A class to represent a question. """
     __tablename__ = 'questions'
     id = Column(Integer, primary_key=True, autoincrement=True)
     quiz_id = Column(Integer, ForeignKey('quizzes.id'))
@@ -65,6 +68,7 @@ class Question(Base):
     correct_answers = relationship('CorrectAnswer', back_populates='question', lazy='dynamic', cascade='all, delete-orphan')
 
 class QuestionBank(Base):
+    """ A class to represent a question bank. """
     __tablename__ = 'question_banks'
     id = Column(Integer, primary_key=True, autoincrement=True)
     creator_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -77,6 +81,7 @@ class QuestionBank(Base):
     questions = relationship("Question", back_populates="question_bank")
 
 class QuizAttempt(Base):
+    """ A class to represent a quiz attempt. """
     __tablename__ = 'quiz_attempts'
     id = Column(Integer, primary_key=True, nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -93,6 +98,7 @@ class QuizAttempt(Base):
     answers = relationship('Answer', back_populates='quiz_attempt', lazy='dynamic', cascade='all, delete-orphan')
 
 class Answer(Base):
+    """ A class to represent an answer. """
     __tablename__ = 'answers'
     id = Column(Integer, primary_key=True, nullable=False)
     question_id = Column(Integer, ForeignKey('questions.id'), nullable=False)
@@ -106,6 +112,7 @@ class Answer(Base):
     quiz_attempt = relationship('QuizAttempt', back_populates='answers')
 
 class CorrectAnswer(Base):
+    """ A class to represent a correct answer. """
     __tablename__ = 'correct_answers'
     id = Column(Integer, primary_key=True, nullable=False)
     question_id = Column(Integer, ForeignKey('questions.id'), nullable=False)
