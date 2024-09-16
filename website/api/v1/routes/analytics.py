@@ -1,7 +1,7 @@
 from flask import request, jsonify
 from oauth2 import get_current_user
 from database import get_db
-from models import QuizAttempt
+from models import QuizAttempt, Quiz
 from utils import evaluate_quiz
 from . import views
 
@@ -35,9 +35,13 @@ def evaluate_quiz_attempt(user_id, quiz_id, attempt_id):
         attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.user_id == user_id, QuizAttempt.quiz_id == quiz_id).first()
     if user.role != 'student':
         attempt = db.query(QuizAttempt).filter(QuizAttempt.id == attempt_id, QuizAttempt.quiz_id == quiz_id).first()
+    if not attempt.is_submitted:
+        return jsonify({"detail": "Quiz attempt is not submitted"}), 400
 
     if not attempt:
         return jsonify({"detail": "Attempt not found"}), 404
 
+    question_num_in_quiz = db.query(QuizAttempt).filter(QuizAttempt.quiz_id == quiz_id).count()
     total_score = evaluate_quiz(attempt_id)
-    return jsonify({"total_score": total_score}), 200
+
+    return jsonify({"total_score": str(int(total_score/question_num_in_quiz * 100))+"%"}), 200
