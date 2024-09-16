@@ -45,6 +45,10 @@ def submit_answer(user_id, quiz_id, attempt_id, question_id):
     if not question:
         return jsonify({"detail": "Question not found"}), 404
 
+    answer = db.query(Answer).filter(Answer.attempt_id == attempt_id, Answer.question_id == question_id).first()
+    if answer:
+        return jsonify({"detail": "Answer already exists"}), 400
+
     data = request.json
     
     if data.get('content') is None:
